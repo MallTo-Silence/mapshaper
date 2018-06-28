@@ -9,27 +9,28 @@ geom.getShapeCentroid = function(shp, arcs) {
 };
 
 geom.getPathCentroid = function(ids, arcs) {
-  var iter = arcs.getShapeIter(ids),
-      sum = 0,
-      sumX = 0,
-      sumY = 0,
-      ax, ay, tmp, area;
+  var iter = arcs.getShapeIter(ids);
   if (!iter.hasNext()) return null;
-  ax = iter.x;
-  ay = iter.y;
+  var sum_x = 0,
+      sum_y = 0,
+      sum_area = 0;
+  var p0 = [iter.x, iter.y];
+  if (!iter.hasNext()) return null;
+  var p1 = [iter.x, iter.y];
   while (iter.hasNext()) {
-    tmp = ax * iter.y - ay * iter.x;
-    sum += tmp;
-    sumX += tmp * (iter.x + ax);
-    sumY += tmp * (iter.y + ay);
-    ax = iter.x;
-    ay = iter.y;
+    var p2 = [iter.x, iter.y];
+    var area = geom.getArea(p0, p1, p2);
+    sum_area += area;
+    sum_x += (p0[0] + p1[0] + p2[0]) * area;
+    sum_y += (p0[1] + p1[1] + p2[1]) * area;
+    p1 = p2;
   }
-  area = sum / 2;
-  if (area === 0) {
-    return geom.getAvgPathXY(ids, arcs);
-  } else return {
-    x: sumX / (6 * area),
-    y: sumY / (6 * area)
-  };
+  var x = sum_x / sum_area / 3;
+  var y = sum_y / sum_area / 3;
+  return { x, y };
+};
+
+geom.getArea = function(p0, p1, p2) {
+  // (po.lng * p1.lat + p1.lng * p2.lat + p2.lng * p0.lat - p1.lng * p0.lat - p2.lng * p1.lat - p0.lng * p2.lat) / 2
+  return (p0[0] * p1[1] + p1[0] * p2[1] + p2[0] * p0[1] - p1[0] * p0[1] - p2[0] * p1[1] - p0[0] * p2[1]) / 2.0;
 };
